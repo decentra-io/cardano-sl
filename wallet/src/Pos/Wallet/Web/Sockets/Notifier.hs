@@ -24,7 +24,7 @@ import           Pos.DB                            (MonadGState (..))
 import           Pos.Wallet.WalletMode             (connectedPeers, localChainDifficulty,
                                                     networkChainDifficulty, waitForUpdate)
 import           Pos.Wallet.Web.ClientTypes        (spLocalCD, spNetworkCD, spPeers,
-                                                    toCUpdateInfo)
+                                                    toCConfirmedProposalState)
 import           Pos.Wallet.Web.Mode               (MonadWalletWebMode)
 import           Pos.Wallet.Web.Sockets.Connection (notifyAll)
 import           Pos.Wallet.Web.Sockets.Types      (NotifyEvent (..))
@@ -34,7 +34,7 @@ import           Pos.Wallet.Web.State              (addUpdate)
 launchNotifier :: MonadWalletWebMode m => (m :~> Handler) -> m ()
 launchNotifier nat =
     void . liftIO $ mapM startForking
-        [ dificultyNotifier
+        [ difficultyNotifier
         , updateNotifier
         ]
   where
@@ -56,7 +56,7 @@ launchNotifier nat =
     notifier period action = forever $ do
         liftIO $ threadDelay period
         action
-    dificultyNotifier = void . flip runStateT def $ notifier difficultyNotifyPeriod $ do
+    difficultyNotifier = void . flip runStateT def $ notifier difficultyNotifyPeriod $ do
         whenJustM networkChainDifficulty $
             \networkDifficulty -> do
                 oldNetworkDifficulty <- use spNetworkCD
@@ -79,7 +79,7 @@ launchNotifier nat =
     updateNotifier = do
         cps <- waitForUpdate
         bvd <- gsAdoptedBVData
-        addUpdate $ toCUpdateInfo bvd cps
+        addUpdate $ toCConfirmedProposalState bvd cps
         logDebug "Added update to wallet storage"
         notifyAll UpdateAvailable
 

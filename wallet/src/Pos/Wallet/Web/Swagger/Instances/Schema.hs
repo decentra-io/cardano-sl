@@ -13,15 +13,21 @@ import           Control.Lens               (mapped, (?~))
 import           Data.Swagger               (NamedSchema (..), SwaggerType (..),
                                              ToParamSchema (..), ToSchema (..),
                                              declareNamedSchema, declareSchemaRef,
-                                             defaultSchemaOptions,
-                                             format, genericDeclareNamedSchema,
-                                             name, properties, required, type_)
+                                             defaultSchemaOptions, format,
+                                             genericDeclareNamedSchema, name, properties,
+                                             required, type_)
 import           Data.Typeable              (Typeable, typeRep)
 import           Servant.Multipart          (FileData (..))
 
+import           Pos.Crypto                 (PublicKey)
 import           Pos.Types                  (ApplicationName, BlockCount (..),
                                              BlockVersion, ChainDifficulty, Coin,
-                                             SlotCount (..), SoftwareVersion)
+                                             EpochIndex, HeaderHash, LocalSlotIndex,
+                                             SlotCount (..), SlotId, SoftwareVersion)
+import           Pos.Update.Core.Types      (UpdateProposal, VoteState)
+import           Pos.Update.Poll.Types      (DecidedProposalState, DpsExtra,
+                                             ProposalState, UndecidedProposalState,
+                                             UpsExtra)
 import           Pos.Util.BackupPhrase      (BackupPhrase)
 
 import qualified Pos.Wallet.Web.ClientTypes as CT
@@ -65,8 +71,9 @@ instance ToSchema      CT.CPaperVendWalletRedeem
 instance ToSchema      CT.CCoin
 instance ToSchema      CT.CInitialized
 instance ToSchema      CT.CElectronCrashReport
-instance ToSchema      CT.CUpdateInfo
+instance ToSchema      CT.CConfirmedProposalState
 instance ToSchema      SoftwareVersion
+instance ToParamSchema ApplicationName
 instance ToSchema      ApplicationName
 instance ToSchema      CT.SyncProgress
 instance ToSchema      BlockCount
@@ -75,6 +82,23 @@ instance ToSchema      ChainDifficulty
 instance ToSchema      BlockVersion
 instance ToSchema      BackupPhrase
 instance ToParamSchema CT.CPassPhrase
+
+instance ToSchema      ProposalState
+instance ToSchema      UndecidedProposalState
+instance ToSchema      DecidedProposalState
+instance ToSchema      DpsExtra
+instance ToSchema      VoteState
+instance ToSchema      SlotId
+instance ToSchema      EpochIndex
+instance ToSchema      LocalSlotIndex
+instance ToSchema      UpsExtra
+
+instance ToSchema      HeaderHash where
+    declareNamedSchema _ = error "ToSchema HeaderHash is undefined"
+instance ToSchema      PublicKey where
+    declareNamedSchema _ = error "ToSchema PublicKey is undefined"
+instance ToSchema      UpdateProposal where
+    declareNamedSchema _ = error "ToSchema UpdateProposal is undefined"
 
 instance ToSchema FileData where
     declareNamedSchema _ = do

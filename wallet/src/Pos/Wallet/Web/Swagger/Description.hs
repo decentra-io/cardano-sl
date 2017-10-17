@@ -145,6 +145,10 @@ instance HasCustomSwagger GetHistory where
         "Get the history of transactions."
 
 
+instance HasCustomSwagger UpdatesByApp where
+    swaggerModifier = modifyDescription
+        "Get information about all updates for the specified app."
+
 instance HasCustomSwagger NextUpdate where
     swaggerModifier = modifyDescription
         "Get information about the next update."

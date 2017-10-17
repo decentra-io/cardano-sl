@@ -89,10 +89,10 @@ import           Pos.Core.Configuration       (HasConfiguration)
 import           Pos.Txp                      (TxId, Utxo)
 import           Pos.Types                    (HeaderHash)
 import           Pos.Util.Servant             (encodeCType)
-import           Pos.Wallet.Web.ClientTypes   (AccountId, Addr, CAccountMeta, CId,
-                                               CProfile, CTxId, CTxMeta, CUpdateInfo,
-                                               CWAddressMeta, CWalletMeta, PassPhraseLU,
-                                               Wal)
+import           Pos.Wallet.Web.ClientTypes   (AccountId, Addr, CAccountMeta,
+                                               CConfirmedProposalState, CId, CProfile,
+                                               CTxId, CTxMeta, CWAddressMeta, CWalletMeta,
+                                               PassPhraseLU, Wal)
 import           Pos.Wallet.Web.Pending.Types (PendingTx (..), PtxCondition)
 import           Pos.Wallet.Web.State.Acidic  (WalletState, closeState, openMemState,
                                                openState)
@@ -170,10 +170,10 @@ getTxMeta cWalId = queryDisk . A.GetTxMeta cWalId
 getWalletTxHistory :: WebWalletModeDB ctx m => CId Wal -> m (Maybe [CTxMeta])
 getWalletTxHistory = queryDisk . A.GetWalletTxHistory
 
-getUpdates :: WebWalletModeDB ctx m => m [CUpdateInfo]
+getUpdates :: WebWalletModeDB ctx m => m [CConfirmedProposalState]
 getUpdates = queryDisk A.GetUpdates
 
-getNextUpdate :: WebWalletModeDB ctx m => m (Maybe CUpdateInfo)
+getNextUpdate :: WebWalletModeDB ctx m => m (Maybe CConfirmedProposalState)
 getNextUpdate = queryDisk A.GetNextUpdate
 
 getHistoryCache :: WebWalletModeDB ctx m => CId Wal -> m (Maybe (Map TxId TxHistoryEntry))
@@ -276,7 +276,7 @@ removeCustomAddress
     => CustomAddressType -> (CId Addr, HeaderHash) -> m Bool
 removeCustomAddress = updateDisk ... A.RemoveCustomAddress
 
-addUpdate :: WebWalletModeDB ctx m => CUpdateInfo -> m ()
+addUpdate :: WebWalletModeDB ctx m => CConfirmedProposalState -> m ()
 addUpdate = updateDisk . A.AddUpdate
 
 removeNextUpdate :: WebWalletModeDB ctx m => m ()

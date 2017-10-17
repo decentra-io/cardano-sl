@@ -19,10 +19,12 @@ import           Servant.API                          (FromHttpApiData (..))
 import           Servant.Multipart                    (FromMultipart (..), lookupFile,
                                                        lookupInput)
 
-import           Pos.Core                             (Address, Coin, decodeTextAddress,
-                                                       mkCoin)
+import           Pos.Core                             (Address, ApplicationName, Coin,
+                                                       decodeTextAddress,
+                                                       mkApplicationName, mkCoin)
 import           Pos.Crypto                           (PassPhrase, passphraseLength)
 import           Pos.Txp.Core.Types                   (TxId)
+import           Pos.Update.Poll.Types                (ProposalState)
 import           Pos.Util.Servant                     (FromCType (..),
                                                        HasTruncateLogPolicy (..),
                                                        OriginType, ToCType (..),
@@ -34,15 +36,16 @@ import           Pos.Wallet.Web.ClientTypes.Types     (AccountId (..), CAccount 
                                                        CAccountId (..), CAccountInit (..),
                                                        CAccountMeta (..), CAddress (..),
                                                        CCoin (..),
+                                                       CConfirmedProposalState (..),
                                                        CElectronCrashReport (..),
                                                        CId (..), CInitialized (..),
                                                        CPaperVendWalletRedeem (..),
                                                        CPassPhrase (..), CProfile (..),
                                                        CPtxCondition, CTx (..),
                                                        CTxId (..), CTxId, CTxMeta (..),
-                                                       CUpdateInfo (..), CWallet (..),
-                                                       CWallet, CWalletAssurance,
-                                                       CWalletInit (..), CWalletMeta (..),
+                                                       CWallet (..), CWallet,
+                                                       CWalletAssurance, CWalletInit (..),
+                                                       CWalletMeta (..),
                                                        CWalletRedeem (..),
                                                        SyncProgress (..))
 import           Pos.Wallet.Web.Pending.Types         (PtxCondition)
@@ -155,8 +158,8 @@ instance Buildable CProfile where
     build CProfile{..} =
         bprint ("{ cpLocale="%build%" }") cpLocale
 
-instance Buildable CUpdateInfo where
-    build CUpdateInfo{..} =
+instance Buildable CConfirmedProposalState where
+    build CConfirmedProposalState{..} =
         bprint ("{ softver="%build
                 %" blockver="%build
                 %" scriptver="%build
@@ -166,14 +169,14 @@ instance Buildable CUpdateInfo where
                 %" pos stake="%build
                 %" neg stake="%build
                 %" }")
-        cuiSoftwareVersion
-        cuiBlockVesion  -- TODO [CSM-407] lol what is it?
-        cuiScriptVersion
-        cuiImplicit
-        cuiVotesFor
-        cuiVotesAgainst
-        cuiPositiveStake
-        cuiNegativeStake
+        ccpsSoftwareVersion
+        ccpsBlockVersion  -- TODO [CSM-407] lol what is it?
+        ccpsScriptVersion
+        ccpsImplicit
+        ccpsVotesFor
+        ccpsVotesAgainst
+        ccpsPositiveStake
+        ccpsNegativeStake
 
 instance Buildable SyncProgress where
     build SyncProgress{..} =
@@ -290,6 +293,9 @@ instance FromHttpApiData CTxId where
 instance FromHttpApiData CPassPhrase where
     parseUrlPiece = pure . CPassPhrase
 
+instance FromHttpApiData ApplicationName where
+    parseUrlPiece = mkApplicationName
+
 
 instance FromMultipart CElectronCrashReport where
     fromMultipart form = do
@@ -333,6 +339,9 @@ instance HasTruncateLogPolicy CAddress where
         in take 5 (withMoney <> withoutMoney)
       where
         zeroMoney = encodeCType minBound
+
+instance HasTruncateLogPolicy ProposalState where
+    truncateLogPolicy = take 5
 
 instance Buildable (WithTruncatedLog CAccount) where
     build (WithTruncatedLog CAccount{..}) =

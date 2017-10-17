@@ -42,6 +42,9 @@ instance ToJSONKey (AbstractHash algo a) where
 instance ToJSON PublicKey where
     toJSON = toJSON . sformat fullPublicKeyF
 
+instance ToJSONKey PublicKey where
+    toJSONKey = toJSONKeyText $ sformat fullPublicKeyF
+
 instance ToJSON (ProxyCert w) where
     toJSON = toJSON . sformat fullProxyCertHexF
 

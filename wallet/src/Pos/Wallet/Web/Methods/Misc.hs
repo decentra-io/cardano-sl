@@ -8,6 +8,7 @@ module Pos.Wallet.Web.Methods.Misc
 
        , isValidAddress
 
+       , allUpdates
        , nextUpdate
        , postponeUpdate
        , applyUpdate
@@ -20,14 +21,17 @@ module Pos.Wallet.Web.Methods.Misc
 import           Universum
 
 import           Pos.Aeson.ClientTypes      ()
-import           Pos.Core                   (SoftwareVersion (..), decodeTextAddress)
+import           Pos.Core                   (ApplicationName, SoftwareVersion (..),
+                                             decodeTextAddress)
 import           Pos.Update.Configuration   (curSoftwareVersion)
+import           Pos.Update.DB              (getProposalsByApp)
+import           Pos.Update.Poll.Types      (ProposalState)
 import           Pos.Util                   (maybeThrow)
 
 import           Pos.Wallet.KeyStorage      (deleteSecretKey, getSecretKeys)
 import           Pos.Wallet.WalletMode      (applyLastUpdate, connectedPeers,
                                              localChainDifficulty, networkChainDifficulty)
-import           Pos.Wallet.Web.ClientTypes (CProfile (..), CUpdateInfo (..),
+import           Pos.Wallet.Web.ClientTypes (CConfirmedProposalState (..), CProfile (..),
                                              SyncProgress (..))
 import           Pos.Wallet.Web.Error       (WalletError (..))
 import           Pos.Wallet.Web.Mode        (MonadWalletWebMode)
@@ -58,11 +62,15 @@ isValidAddress sAddr =
 -- Updates
 ----------------------------------------------------------------------------
 
+-- | Get info on all updates
+allUpdates :: MonadWalletWebMode m => ApplicationName -> m [ProposalState]
+allUpdates = getProposalsByApp
+
 -- | Get last update info
-nextUpdate :: MonadWalletWebMode m => m CUpdateInfo
+nextUpdate :: MonadWalletWebMode m => m CConfirmedProposalState
 nextUpdate = do
     updateInfo <- getNextUpdate >>= maybeThrow noUpdates
-    if isUpdateActual (cuiSoftwareVersion updateInfo)
+    if isUpdateActual (ccpsSoftwareVersion updateInfo)
         then pure updateInfo
         else removeNextUpdate >> nextUpdate
   where

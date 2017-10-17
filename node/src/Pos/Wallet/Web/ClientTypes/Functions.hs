@@ -9,7 +9,7 @@ module Pos.Wallet.Web.ClientTypes.Functions
       , mkCTxId
       , ptxCondToCPtxCond
       , txIdToCTxId
-      , toCUpdateInfo
+      , toCConfirmedProposalState
       , addrMetaToAccount
       , isTxLocalAddress
       ) where
@@ -40,12 +40,12 @@ import           Pos.Update.Core                  (BlockVersionData (..),
                                                    isPositiveVote)
 import           Pos.Update.Poll                  (ConfirmedProposalState (..))
 import           Pos.Wallet.Web.ClientTypes.Types (AccountId (..), Addr, CCoin (..),
+                                                   CConfirmedProposalState (..),
                                                    CHash (..), CId (..),
                                                    CPtxCondition (..), CTx (..),
-                                                   CTxId (..), CTxMeta, CUpdateInfo (..),
+                                                   CTxId (..), CTxMeta,
                                                    CWAddressMeta (..))
 import           Pos.Wallet.Web.Pending.Types     (PtxCondition (..))
-
 
 -- TODO: this is not completely safe. If someone changes
 -- implementation of Buildable Address. It should be probably more
@@ -183,20 +183,23 @@ countVotes = foldl' counter (0, 0)
                               then (n + 1, m)
                               else (n, m + 1)
 
--- | Creates 'CTUpdateInfo' from 'ConfirmedProposalState'
-toCUpdateInfo :: BlockVersionData -> ConfirmedProposalState -> CUpdateInfo
-toCUpdateInfo bvd ConfirmedProposalState {..} =
+-- | Creates 'CConfirmedProposalState' from 'ConfirmedProposalState'
+toCConfirmedProposalState
+    :: BlockVersionData
+    -> ConfirmedProposalState
+    -> CConfirmedProposalState
+toCConfirmedProposalState bvd ConfirmedProposalState {..} =
     let UnsafeUpdateProposal {..} = cpsUpdateProposal
-        cuiSoftwareVersion  = upSoftwareVersion
-        cuiBlockVesion      = upBlockVersion
-        cuiScriptVersion    = fromMaybe (bvdScriptVersion bvd)
+        ccpsSoftwareVersion  = upSoftwareVersion
+        ccpsBlockVersion     = upBlockVersion
+        ccpsScriptVersion    = fromMaybe (bvdScriptVersion bvd)
                                         (bvmScriptVersion upBlockVersionMod)
-        cuiImplicit         = cpsImplicit
---        cuiProposed         = cpsProposed
---        cuiDecided          = cpsDecided
---        cuiConfirmed        = cpsConfirmed
---        cuiAdopted          = cpsAdopted
-        (cuiVotesFor, cuiVotesAgainst) = countVotes cpsVotes
-        cuiPositiveStake    = mkCCoin cpsPositiveStake
-        cuiNegativeStake    = mkCCoin cpsNegativeStake
-    in CUpdateInfo {..}
+        ccpsImplicit         = cpsImplicit
+        -- ccpsProposed         = cpsProposed
+        -- ccpsDecided          = cpsDecided
+        -- ccpsConfirmed        = cpsConfirmed
+        -- ccpsAdopted          = cpsAdopted
+        (ccpsVotesFor, ccpsVotesAgainst) = countVotes cpsVotes
+        ccpsPositiveStake    = mkCCoin cpsPositiveStake
+        ccpsNegativeStake    = mkCCoin cpsNegativeStake
+    in CConfirmedProposalState {..}

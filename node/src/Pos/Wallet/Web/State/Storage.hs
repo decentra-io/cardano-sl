@@ -94,10 +94,11 @@ import           Pos.Txp                        (TxAux, TxId, Utxo)
 import           Pos.Types                      (HeaderHash)
 import           Pos.Util.BackupPhrase          (BackupPhrase)
 import           Pos.Wallet.Web.ClientTypes     (AccountId, Addr, CAccountMeta, CCoin,
-                                                 CHash, CId, CProfile, CTxId, CTxMeta,
-                                                 CUpdateInfo, CWAddressMeta (..),
-                                                 CWalletAssurance, CWalletMeta,
-                                                 PassPhraseLU, Wal, addrMetaToAccount)
+                                                 CConfirmedProposalState, CHash, CId,
+                                                 CProfile, CTxId, CTxMeta,
+                                                 CWAddressMeta (..), CWalletAssurance,
+                                                 CWalletMeta, PassPhraseLU, Wal,
+                                                 addrMetaToAccount)
 import           Pos.Wallet.Web.Pending.Types   (PendingTx (..), PtxCondition,
                                                  PtxSubmitTiming (..), ptxCond,
                                                  ptxSubmitTiming)
@@ -148,7 +149,7 @@ data WalletStorage = WalletStorage
     { _wsWalletInfos     :: !(HashMap (CId Wal) WalletInfo)
     , _wsAccountInfos    :: !(HashMap AccountId AccountInfo)
     , _wsProfile         :: !CProfile
-    , _wsReadyUpdates    :: [CUpdateInfo]
+    , _wsReadyUpdates    :: [CConfirmedProposalState]
     , _wsTxHistory       :: !(HashMap (CId Wal) (HashMap CTxId CTxMeta))
     , _wsHistoryCache    :: !(HashMap (CId Wal) (Map TxId TxHistoryEntry))
     , _wsUtxo            :: !Utxo
@@ -270,10 +271,10 @@ getWalletUtxo = view wsUtxo
 setWalletUtxo :: Utxo -> Update ()
 setWalletUtxo utxo = wsUtxo .= utxo
 
-getUpdates :: Query [CUpdateInfo]
+getUpdates :: Query [CConfirmedProposalState]
 getUpdates = view wsReadyUpdates
 
-getNextUpdate :: Query (Maybe CUpdateInfo)
+getNextUpdate :: Query (Maybe CConfirmedProposalState)
 getNextUpdate = preview (wsReadyUpdates . _head)
 
 getHistoryCache :: CId Wal -> Query (Maybe (Map TxId TxHistoryEntry))
@@ -406,7 +407,7 @@ totallyRemoveWAddress addrMeta@(addrMetaToAccount -> accId) = do
     wsAccountInfos . ix accId . aiAddresses        . at (cwamId addrMeta) .= Nothing
     wsAccountInfos . ix accId . aiRemovedAddresses . at (cwamId addrMeta) .= Nothing
 
-addUpdate :: CUpdateInfo -> Update ()
+addUpdate :: CConfirmedProposalState -> Update ()
 addUpdate ui = wsReadyUpdates %= (++ [ui])
 
 removeNextUpdate :: Update ()
@@ -500,7 +501,7 @@ deriveSafeCopySimple 0 'base ''CTxId
 deriveSafeCopySimple 0 'base ''Timestamp
 deriveSafeCopySimple 0 'base ''TxHistoryEntry
 deriveSafeCopySimple 0 'base ''CTxMeta
-deriveSafeCopySimple 0 'base ''CUpdateInfo
+deriveSafeCopySimple 0 'base ''CConfirmedProposalState
 deriveSafeCopySimple 0 'base ''AddressLookupMode
 deriveSafeCopySimple 0 'base ''CustomAddressType
 deriveSafeCopySimple 0 'base ''TxAux
@@ -520,7 +521,7 @@ data WalletStorage_v0 = WalletStorage_v0
     { _v0_wsWalletInfos     :: !(HashMap (CId Wal) WalletInfo)
     , _v0_wsAccountInfos    :: !(HashMap AccountId AccountInfo)
     , _v0_wsProfile         :: !CProfile
-    , _v0_wsReadyUpdates    :: [CUpdateInfo]
+    , _v0_wsReadyUpdates    :: [CConfirmedProposalState]
     , _v0_wsTxHistory       :: !(HashMap (CId Wal) (HashMap CTxId CTxMeta))
     , _v0_wsHistoryCache    :: !(HashMap (CId Wal) [TxHistoryEntry])
     , _v0_wsUtxo            :: !Utxo

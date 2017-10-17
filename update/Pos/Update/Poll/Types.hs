@@ -141,6 +141,9 @@ data ProposalState
     | PSDecided   { unPSDecided   :: !DecidedProposalState }
       deriving (Eq, Generic, Show)
 
+instance Buildable ProposalState where
+    build _ = "<proposal state>"
+
 propStateToEither :: ProposalState -> Either UndecidedProposalState DecidedProposalState
 propStateToEither (PSUndecided ups) = Left ups
 propStateToEither (PSDecided dps)   = Right dps

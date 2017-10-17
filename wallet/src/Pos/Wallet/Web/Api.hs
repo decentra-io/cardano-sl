@@ -43,6 +43,7 @@ module Pos.Wallet.Web.Api
        , UpdateTx
        , GetHistory
 
+       , UpdatesByApp
        , NextUpdate
        , PostponeUpdate
        , ApplyUpdate
@@ -74,7 +75,8 @@ import           Servant.Server             (HasServer (..))
 import           Servant.Swagger.UI         (SwaggerSchemaUI)
 import           Universum
 
-import           Pos.Types                  (Coin, SoftwareVersion)
+import           Pos.Types                  (ApplicationName, Coin, SoftwareVersion)
+import           Pos.Update.Poll.Types      (ProposalState)
 import           Pos.Util.Servant           (ApiLoggingConfig, CCapture, CQueryParam,
                                              CReqBody, DCQueryParam,
                                              HasLoggingServer (..), LoggingApi,
@@ -86,7 +88,7 @@ import           Pos.Wallet.Web.ClientTypes (Addr, CAccount, CAccountId, CAccoun
                                              CAccountMeta, CAddress, CCoin, CId,
                                              CInitialized, CPaperVendWalletRedeem,
                                              CPassPhrase, CProfile, CTx, CTxId, CTxMeta,
-                                             CUpdateInfo, CWallet, CWalletInit,
+                                             CConfirmedProposalState, CWallet, CWalletInit,
                                              CWalletMeta, CWalletRedeem, SyncProgress,
                                              Wal)
 import           Pos.Wallet.Web.Error       (WalletError (DecodeError),
@@ -299,9 +301,15 @@ type GetHistory =
 -- Updates
 -------------------------------------------------------------------------
 
+type UpdatesByApp =
+       "update"
+    :> "app"
+    :> Capture "applicationName" ApplicationName
+    :> WRes Get [ProposalState]
+
 type NextUpdate =
        "update"
-    :> WRes Get CUpdateInfo
+    :> WRes Get CConfirmedProposalState
 
 type PostponeUpdate =
        "update"
@@ -454,6 +462,8 @@ type WalletApi = ApiPrefix :> (
      -------------------------------------------------------------------------
      -- Updates
      -------------------------------------------------------------------------
+     UpdatesByApp
+    :<|>
      NextUpdate
     :<|>
      PostponeUpdate

@@ -64,7 +64,7 @@ main = do
       , mkSumType (Proxy @CT.CTx)
       , mkSumType (Proxy @WS.NotifyEvent)
       , mkSumType (Proxy @CT.SyncProgress)
-      , mkSumType (Proxy @CT.CUpdateInfo)
+      , mkSumType (Proxy @CT.CConfirmedProposalState)
       , mkSumType (Proxy @CT.CWalletRedeem)
       , mkSumType (Proxy @CT.CPaperVendWalletRedeem)
       , mkSumType (Proxy @CT.CInitialized)

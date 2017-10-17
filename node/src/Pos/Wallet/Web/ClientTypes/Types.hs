@@ -28,7 +28,7 @@ module Pos.Wallet.Web.ClientTypes.Types
       , CWallet (..)
       , CWalletMeta (..)
       , CWalletInit (..)
-      , CUpdateInfo (..)
+      , CConfirmedProposalState (..)
       , CWalletRedeem (..)
       , CPaperVendWalletRedeem (..)
       , CCoin (..)
@@ -292,19 +292,19 @@ data CTExMeta = CTExMeta
     } deriving (Show, Generic)
 
 -- | Update system data
-data CUpdateInfo = CUpdateInfo
-    { cuiSoftwareVersion :: !SoftwareVersion
-    , cuiBlockVesion     :: !BlockVersion
-    , cuiScriptVersion   :: !ScriptVersion
-    , cuiImplicit        :: !Bool
---    , cuiProposed        :: !HeaderHash
---    , cuiDecided         :: !HeaderHash
---    , cuiConfirmed       :: !HeaderHash
---    , cuiAdopted         :: !(Maybe HeaderHash)
-    , cuiVotesFor        :: !Int
-    , cuiVotesAgainst    :: !Int
-    , cuiPositiveStake   :: !CCoin
-    , cuiNegativeStake   :: !CCoin
+data CConfirmedProposalState = CConfirmedProposalState
+    { ccpsSoftwareVersion :: !SoftwareVersion
+    , ccpsBlockVersion    :: !BlockVersion
+    , ccpsScriptVersion   :: !ScriptVersion
+    , ccpsImplicit        :: !Bool
+    -- , ccpsProposed        :: !HeaderHash
+    -- , ccpsDecided         :: !HeaderHash
+    -- , ccpsConfirmed       :: !HeaderHash
+    -- , ccpsAdopted         :: !(Maybe HeaderHash)
+    , ccpsVotesFor        :: !Int
+    , ccpsVotesAgainst    :: !Int
+    , ccpsPositiveStake   :: !CCoin
+    , ccpsNegativeStake   :: !CCoin
     } deriving (Show, Generic, Typeable)
 
 ----------------------------------------------------------------------------
