@@ -33,6 +33,7 @@ import           Mode                  (AuxxContext (..), AuxxMode, CmdCtx (..),
                                         realModeToAuxx)
 import           Plugin                (auxxPlugin)
 import           Repl                  (WithCommandAction, withAuxxRepl)
+import           Lang                  ()
 
 -- 'NodeParams' obtained using 'CLI.getNodeParams' are not perfect for
 -- Auxx, so we need to adapt them slightly.

@@ -14,7 +14,7 @@ import           Universum
 
 import           Pos.Crypto (PublicKey)
 import           Pos.Txp    (TxOut)
-import           Pos.Types  (AddrStakeDistribution, Address, BlockVersion, EpochIndex,
+import           Pos.Types  (AddrStakeDistribution, BlockVersion, EpochIndex,
                              SoftwareVersion)
 import           Pos.Update (BlockVersionModifier, SystemTag, UpId)
 
@@ -52,27 +52,19 @@ data GenBlocksParams = GenBlocksParams
     } deriving (Show)
 
 data Command
-    = Balance Address
-    | Send Int (NonEmpty TxOut)
+    = Send Int (NonEmpty TxOut)
     | SendToAllGenesis !SendToAllGenesisParams
     | Vote Int Bool UpId
     | ProposeUpdate !ProposeUpdateParams
-    | HashInstaller !FilePath
-    | Help
-    | ListAddresses
     | DelegateLight !Int !PublicKey !EpochIndex !(Maybe EpochIndex)
      -- ^ From whom, to whom, ttl start/end epochs
     | DelegateHeavy !Int !PublicKey !EpochIndex !Bool
      -- ^ From whom, to whom, ttl epoch, last argument is current
      -- epoch, dry mode
     | AddKeyFromPool !Int
-    | AddKeyFromFile !FilePath
     | AddrDistr !PublicKey !AddrStakeDistribution
     | Rollback !Word !FilePath
     | GenBlocks !GenBlocksParams
-    | SendTxsFromFile !FilePath
-    | PrintBlockVersionData
-    | Quit
     deriving Show
 
 data ProposeUpdateSystem = ProposeUpdateSystem

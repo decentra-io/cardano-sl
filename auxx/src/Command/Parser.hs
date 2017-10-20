@@ -1,9 +1,10 @@
 {-# LANGUAGE ApplicativeDo #-}
+{-# OPTIONS -fno-warn-unused-top-binds #-}
 
 -- | Module for commands parsing.
 
 module Command.Parser
-       ( parseCommand
+       ( parseMaybe
        ) where
 
 import           Universum
@@ -57,8 +58,8 @@ filePath = lexeme (many1 nonSpace)
   where
     nonSpace = noneOf [' ']
 
-address :: Parser Address
-address = lexeme $ do
+pAddress :: Parser Address
+pAddress = lexeme $ do
     str <- many1 alphaNum
     case decodeTextAddress (toText str) of
         Left err -> fail (toString err)
@@ -74,7 +75,7 @@ coin :: Parser Coin
 coin = mkCoin <$> num
 
 txout :: Parser TxOut
-txout = TxOut <$> address <*> coin
+txout = TxOut <$> pAddress <*> coin
 
 hash :: (HashAlgorithm algo, Typeable a) => Parser (AbstractHash algo a)
 hash = eitherToFail . decodeAbstractHash =<< lexeme (toText <$> many1 alphaNum)
@@ -85,9 +86,6 @@ switch = lexeme $ positive $> True <|>
   where
     positive = text "+" <|> text "y" <|> text "yes"
     negative = text "-" <|> text "n" <|> text "no"
-
-balance :: Parser Command
-balance = Balance <$> address
 
 base58PkParser :: Parser PublicKey
 base58PkParser = do
@@ -105,9 +103,8 @@ delegateL =
 delegateH =
     DelegateHeavy <$> num <*> base58PkParser <*> num <*> dumpFlag
 
-addKeyFromPool, addKeyFromFile :: Parser Command
+addKeyFromPool :: Parser Command
 addKeyFromPool = AddKeyFromPool <$> num
-addKeyFromFile = AddKeyFromFile <$> filePath
 
 send :: Parser Command
 send = Send <$> numOrN1 <*> (NE.fromList <$> many1 txout)
@@ -165,9 +162,6 @@ proposeUnlockStakeEpochParams =
 proposeUnlockStakeEpoch :: Parser Command
 proposeUnlockStakeEpoch = ProposeUpdate <$> proposeUnlockStakeEpochParams
 
-hashInstaller :: Parser Command
-hashInstaller = HashInstaller <$> filePath
-
 coinPortionP :: Parser CoinPortion
 coinPortionP = do
     (token, modifier) <- anyText <&> \s -> case Text.stripSuffix "%" s of
@@ -194,9 +188,6 @@ addrDistrP = AddrDistr <$> lexeme base58PkParser <*> lexeme addrStakeDistrP
 rollbackP :: Parser Command
 rollbackP = Rollback <$> num <*> filePath
 
-sendTxsFromFileP :: Parser Command
-sendTxsFromFileP = SendTxsFromFile <$> filePath
-
 genBlocksParams :: Parser Command
 genBlocksParams = fmap GenBlocks $ GenBlocksParams <$> num <*> optional num
 
@@ -217,26 +208,22 @@ parseSystemTag =
         (many alphaNum)
 
 command :: Parser Command
-command = try (text "balance") *> balance <|>
-          try (text "print-bvd") $> PrintBlockVersionData <|>
-          try (text "send-to-all-genesis") *> sendToAllGenesis <|>
-          try (text "send-from-file") *> sendTxsFromFileP <|>
+command = try (text "send-to-all-genesis") *> sendToAllGenesis <|>
           try (text "send") *> send <|>
           try (text "vote") *> vote <|>
           try (text "propose-update") *> proposeUpdate <|>
           try (text "propose-unlock-stake-epoch") *> proposeUnlockStakeEpoch <|>
-          try (text "hash-installer") *> hashInstaller <|>
           try (text "delegate-light") *> delegateL <|>
           try (text "delegate-heavy") *> delegateH <|>
           try (text "generate-blocks") *> genBlocksParams <|>
           try (text "add-key-pool") *> addKeyFromPool <|>
-          try (text "add-key") *> addKeyFromFile <|>
           try (text "addr-distr") *> addrDistrP <|>
-          try (text "rollback") *> rollbackP <|>
-          try (text "quit") *> pure Quit <|>
-          try (text "help") *> pure Help <|>
-          try (text "listaddr") *> pure ListAddresses <?>
-          "Undefined command"
+          try (text "rollback") *> rollbackP
+          <?> "Undefined command"
 
+-- FIXME: remove this
 parseCommand :: Text -> Either Text Command
 parseCommand = first show . parse command ""
+
+parseMaybe :: Parser a -> Text -> Maybe a
+parseMaybe p = either (const Nothing) Just . parse p ""

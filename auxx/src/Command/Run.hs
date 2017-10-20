@@ -1,5 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE QuasiQuotes    #-}
+{-# OPTIONS -fno-warn-unused-imports #-} -- TODO: remove
 
 -- | This module provides a function to run Auxx's command.
 
@@ -43,6 +44,7 @@ import           Mode                       (AuxxMode, CmdCtx (..), deriveHDAddr
                                              getCmdCtx, makePubKeyAddressAuxx)
 
 
+-- FIXME: remove this
 runCmd
     :: ( HasConfigurations
        , HasCompileInfo
@@ -52,14 +54,6 @@ runCmd
     -> SendActions AuxxMode
     -> AuxxMode ()
 runCmd cmd printAction sendActions = case cmd of
-
-    Balance addr -> do
-        balance <- getBalance addr
-        printAction $ sformat ("Current balance: "%coinF) balance
-
-    PrintBlockVersionData -> do
-        bvd <- gsAdoptedBVData
-        printAction $ pretty bvd
 
     Send idx outputs ->
         Tx.send sendActions idx outputs
@@ -72,35 +66,6 @@ runCmd cmd printAction sendActions = case cmd of
 
     ProposeUpdate params ->
         Update.propose sendActions params
-
-    HashInstaller path ->
-        Update.hashInstaller path
-
-    Help ->
-        printAction helpMessage
-
-    ListAddresses -> do
-        let toBase58Text = decodeUtf8 . encodeBase58 bitcoinAlphabet . serialize'
-        sks <- getSecretKeysPlain
-        printAction "Available addresses:"
-        for_ (zip [0 :: Int ..] sks) $ \(i, sk) -> do
-            let pk = encToPublic sk
-            addr <- makePubKeyAddressAuxx pk
-            addrHD <- deriveHDAddressAuxx sk
-            printAction $
-                sformat ("    #"%int%":   addr:      "%build%"\n"%
-                         "          pk base58: "%stext%"\n"%
-                         "          pk hex:    "%fullPublicKeyHexF%"\n"%
-                         "          pk hash:   "%hashHexF%"\n"%
-                         "          HD addr:   "%build)
-                    i addr (toBase58Text pk) pk (addressHash pk) addrHD
-        walletMB <- (^. usWallet) <$> (view userSecret >>= atomically . readTVar)
-        whenJust walletMB $ \wallet -> do
-            addrHD <- deriveHDAddressAuxx (_wusRootKey wallet)
-            printAction $
-                sformat ("    Wallet address:\n"%
-                         "          HD addr:   "%build)
-                    addrHD
 
     DelegateLight i delegatePk startEpoch lastEpochM -> do
         CmdCtx{ccPeers} <- getCmdCtx
@@ -145,10 +110,6 @@ runCmd cmd printAction sendActions = case cmd of
         let key = secrets !! i
         addSecretKey $ noPassEncrypt key
 
-    AddKeyFromFile f -> do
-        secret <- readUserSecret f
-        mapM_ addSecretKey $ secret ^. usKeys
-
     AddrDistr pk asd -> do
         let addr = makeAddress (PubKeyASD pk) (AddrAttributes Nothing asd)
         printAction $ pretty addr
@@ -158,8 +119,3 @@ runCmd cmd printAction sendActions = case cmd of
 
     GenBlocks params ->
         generateBlocks params
-
-    SendTxsFromFile filePath ->
-        Tx.sendTxsFromFile sendActions filePath
-
-    Quit -> pure ()

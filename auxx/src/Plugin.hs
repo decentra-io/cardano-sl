@@ -9,7 +9,6 @@ module Plugin
 
 import           Universum
 
-import qualified Data.Text                  as T
 #if !(defined(mingw32_HOST_OS))
 import           System.Exit                (ExitCode (ExitSuccess))
 import           System.Posix.Process       (exitImmediately)
@@ -30,11 +29,13 @@ import           Pos.Launcher.Configuration (HasConfigurations)
 import           Pos.Txp                    (genesisUtxo, unGenesisUtxo)
 import           Pos.Util.CompileInfo       (HasCompileInfo)
 import           Pos.WorkMode               (EmptyMempoolExt, RealMode, RealModeContext)
+import           Pos.Util.Util              (eitherToThrow)
 
 import           AuxxOptions                (AuxxOptions (..))
-import           Command                    (parseCommand, runCmd)
+import           Command                    (createCommandProcs)
 import           Mode                       (AuxxMode)
 import           Repl                       (WithCommandAction (..))
+import qualified Lang
 
 ----------------------------------------------------------------------------
 -- Plugin implementation
@@ -46,12 +47,15 @@ auxxPlugin ::
     -> Either (WithCommandAction AuxxMode) Text
     -> (WorkerSpec AuxxMode, OutSpecs)
 auxxPlugin AuxxOptions{..} = \case
-        Left WithCommandAction{..} -> worker' runCmdOuts $ \sendActions -> do
-            printAction <- getPrintAction
-            printAction "... the auxx plugin is ready"
-            forever $ withCommand $ \cmd -> do
-                runCmd cmd printAction sendActions
-        Right cmd -> worker' runCmdOuts $ runWalletCmd cmd
+    Left WithCommandAction{..} -> worker' runCmdOuts $ \sendActions -> do
+        printAction <- getPrintAction
+        let commandProcs = createCommandProcs printAction sendActions
+        printAction "... the auxx plugin is ready"
+        forever $ withCommand $ \line -> do
+            expr <- eitherToThrow $ Lang.parse line
+            value <- eitherToThrow =<< Lang.evaluate commandProcs expr
+            withValueText printAction value
+    Right cmd -> worker' runCmdOuts $ runWalletCmd cmd
   where
     worker' specs w =
         worker specs $ \sa -> do
@@ -60,20 +64,28 @@ auxxPlugin AuxxOptions{..} = \case
             w (addLogging sa)
 
 runWalletCmd :: (HasConfigurations, HasCompileInfo) => Text -> Worker AuxxMode
-runWalletCmd str sa = do
-    let strs = T.splitOn "," str
-    for_ strs $ \scmd -> do
-        let mcmd = parseCommand scmd
-        case mcmd of
-            Left err   -> putStrLn err
-            Right cmd' -> runCmd cmd' putText sa
-    putText "Command execution finished"
-    putText " " -- for exit by SIGPIPE
+runWalletCmd line sendActions = do
+    let commandProcs = createCommandProcs printAction sendActions
+    expr <- eitherToThrow $ Lang.parse line
+    value <- eitherToThrow =<< Lang.evaluate commandProcs expr
+    withValueText printAction value
+    printAction "Command execution finished"
+    printAction " " -- for exit by SIGPIPE
     liftIO $ hFlush stdout
 #if !(defined(mingw32_HOST_OS))
     delay $ sec 3
     liftIO $ exitImmediately ExitSuccess
 #endif
+  where
+    printAction = putText
+
+withValueText :: Monad m => (Text -> m ()) -> Lang.Value -> m ()
+withValueText cont = \case
+    Lang.ValueUnit -> return ()
+    Lang.ValueNumber n -> cont (show n)
+    Lang.ValueString s -> cont (toText s)
+    Lang.ValueAddress a -> cont (pretty a)
+    Lang.ValueFilePath s -> cont (toText s)
 
 ----------------------------------------------------------------------------
 -- Something hacky
