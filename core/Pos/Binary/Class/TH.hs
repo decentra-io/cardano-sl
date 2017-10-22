@@ -1,4 +1,3 @@
-
 {-
 TH helpers for Bi.
 
@@ -73,7 +72,6 @@ import           Language.Haskell.TH
 import           TH.ReifySimple        (DataCon (..), DataType (..), reifyDataType)
 import           TH.Utilities          (plainInstanceD)
 
-import qualified Codec.CBOR.Decoding   as Cbor
 import qualified Codec.CBOR.Encoding   as Cbor
 import qualified Pos.Binary.Class.Core as Bi
 
@@ -226,7 +224,7 @@ deriveSimpleBiInternal predsMB headTy constrs = do
         []     ->
             failText $ sformat ("Attempting to decode type without constructors "%shown) headTy
         [cons] -> do
-          doE [ bindS (varP actualLen)  [| Cbor.decodeListLen |]
+          doE [ bindS (varP actualLen)  [| Bi.decodeListLen |]
               , noBindS (biDecodeConstr cons) -- There is one constructor
               ]
         _      -> do
@@ -237,7 +235,7 @@ deriveSimpleBiInternal predsMB headTy constrs = do
                     match wildP (normalB
                         [| fail $ toString ("Found invalid tag while decoding " <> shortNameTy) |]) []
             doE
-                [ bindS (varP actualLen)  [| Cbor.decodeListLen |]
+                [ bindS (varP actualLen)  [| Bi.decodeListLen |]
                 , bindS (varP tagName)    [| Bi.decode |]
                 , noBindS (caseE
                                 (sigE (varE tagName) tagType)
